@@ -17,6 +17,14 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster.name
 }
 
+# 2. KMS Key for EKS Secrets Encryption (fixes SNYK-CC-TF-107)
+
+resource "aws_kms_key" "eks_secrets" {
+  description             = "KMS key for EKS cluster secrets encryption"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+}
+
 # 2. The EKS Cluster (The Brain)
 
 resource "aws_eks_cluster" "main" {
@@ -30,13 +38,27 @@ resource "aws_eks_cluster" "main" {
       aws_subnet.public_1.id,
       aws_subnet.public_2.id
     ]
+    # SNYK-CC-TF-94: Disable public API endpoint access
+    endpoint_public_access  = false
+    endpoint_private_access = true
   }
-  # Add this block right here for new API access:
+
+  # SNYK-CC-TF-131: Enable all control plane log types
+  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
+  # SNYK-CC-TF-107: Encrypt Kubernetes secrets at rest using KMS
+  encryption_config {
+    provider {
+      key_arn = aws_kms_key.eks_secrets.arn
+    }
+    resources = ["secrets"]
+  }
 
   access_config {
     authentication_mode                         = "API_AND_CONFIG_MAP"
     bootstrap_cluster_creator_admin_permissions = true
   }
+
   depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]
 }
 

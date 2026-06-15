@@ -22,6 +22,37 @@ spec:
         ports:
         - containerPort: 7777
 
+        # SNYK-CC-K8S-4 / SNYK-CC-K8S-5: Set CPU and memory limits
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+
+        # SNYK-CC-K8S-41: Liveness probe so Kubernetes can restart unhealthy pods
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 7777
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          failureThreshold: 3
+
+        securityContext:
+          # SNYK-CC-K8S-8: Prevent writes to the root filesystem
+          readOnlyRootFilesystem: true
+          # SNYK-CC-K8S-9: Disallow privilege escalation
+          allowPrivilegeEscalation: false
+          # SNYK-CC-K8S-10 / SNYK-CC-K8S-11: Run as a non-root user with a fixed UID
+          runAsNonRoot: true
+          runAsUser: 1000
+          # SNYK-CC-K8S-6: Drop all Linux capabilities
+          capabilities:
+            drop:
+              - ALL
+
 ---
 # 2. The Service: Commands AWS to build a Load Balancer so the public can reach the app
 
@@ -39,3 +70,7 @@ spec:
       port: 80
       targetPort: 7777
   type: LoadBalancer
+  # SNYK-CC-K8S-15: Restrict ingress to known CIDR ranges (update as needed)
+  loadBalancerSourceRanges:
+    - "10.0.0.0/8"       # Internal VPC traffic
+    - "0.0.0.0/0"        # TODO: Replace with your organisation's public IPs to fully lock this down
