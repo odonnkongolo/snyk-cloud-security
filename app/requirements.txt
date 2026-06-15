@@ -11,4 +11,5 @@ requests==2.32.0
 # Security: Pin zipp to fix CVE-2024-5569 (infinite loop, CVSS 6.9)
 # Transitive path: gunicorn -> importlib-metadata -> zipp
 # Fixed in zipp@3.19.1 (SNYK-PYTHON-ZIPP-7430899)
+
 zipp>=3.19.1
