@@ -38,8 +38,9 @@ resource "aws_eks_cluster" "main" {
       aws_subnet.public_1.id,
       aws_subnet.public_2.id
     ]
-    # SNYK-CC-TF-94: Disable public API endpoint access
-    endpoint_public_access  = false
+    # SNYK-CC-TF-94: Public access re-enabled for GitHub Actions runners.
+    # Restrict public_access_cidrs to your runner IPs to harden this further.
+    endpoint_public_access  = true
     endpoint_private_access = true
   }
 
