@@ -2,7 +2,7 @@ name: 🚀 Production Deployment Pipeline
 
 on:
   workflow_run:
-    workflows: ["⛑️ Pre-Deployment Security Gates"]
+    workflows: ["🏰 Snyk IaC Security Scans"]
     types:
       - completed
 

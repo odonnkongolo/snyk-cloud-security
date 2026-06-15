@@ -2,7 +2,7 @@ name: 🤖 Snyk AI Code Scans
 
 on:
   workflow_run:
-    workflows: ["⛑️ Pre-Deployment Security Gates"]
+    workflows: ["🔴 Static Code Checks Linting and Scanning"]
     types:
       - completed
 
