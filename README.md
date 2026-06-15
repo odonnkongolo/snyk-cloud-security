@@ -64,4 +64,5 @@ zipp>=3.19.1
 <img alt="Snyk dashboard showing zipp@3.15.0 infinite loop vulnerability with priority score 666 and fix recommendation" src="images/Screenshot%202026-06-15%20at%2021.54.51.png" />
 <img alt="GitHub Actions log showing Snyk Code scan completed with 0 total issues" src="images/Screenshot%202026-06-15%20at%2022.03.10.png" />
 <img alt="GitHub Actions log showing Snyk IaC scan completed with 0 critical, 0 high, 0 medium, 0 low issues" src="images/Screenshot%202026-06-15%20at%2022.03.52.png" />
-<img alt="Snyk Cloud Console showing all 8 project files with 0 Critical, 0 High, 0 Medium findings after full remediation" src="images/Screenshot%202026-06-15%20at%2023.45.50.png" />
+<img width="1453" height="753" alt="Screenshot 2026-06-15 at 23 45 50" src="https://github.com/user-attachments/assets/046fab80-65ed-4b77-b04d-1fda36e32a26" />
+
