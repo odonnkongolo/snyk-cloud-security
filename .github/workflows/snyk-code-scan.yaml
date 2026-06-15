@@ -1,0 +1,30 @@
+name: 🤖 Snyk AI Code Scans
+
+on:
+  workflow_run:
+    workflows: ["⛑️ Pre-Deployment Security Gates"]
+    types:
+      - completed
+
+env:
+  AWS_REGION: "eu-west-1"
+  EKS_CLUSTER_NAME: "threat-detection-cluster"
+  ECR_REPOSITORY: "threat-detection-app"
+
+jobs:
+  snyk-scans:
+    name: Snyk Security Pipelines
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # PHASE 1: Snyk AI Code Scan (SAST)
+      - name: Phase 1 - Snyk AI Code Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: code test
+          args: --severity-threshold=high

@@ -1,0 +1,32 @@
+name: 🏰 Snyk IaC Security Scans
+
+on:
+  workflow_run:
+    workflows: ["🤖 Snyk AI Code Scans"]
+    types:
+      - completed
+
+env:
+  AWS_REGION: "eu-west-1"
+  EKS_CLUSTER_NAME: "threat-detection-cluster"
+  ECR_REPOSITORY: "threat-detection-app"
+
+
+jobs:
+  snyk-scans:
+    name: Snyk Security Pipelines
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+        # PHASE 2: Snyk IaC Scan (Terraform / K8s / CloudFormation)
+      - name: Phase 2 - Snyk IaC Scan
+        if: success() || failure() # Runs Phase 2 even if Phase 1 finds code issues
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: iac test
+          args: --severity-threshold=high

@@ -1,0 +1,41 @@
+# 1. The Deployment: Tells the EKS nodes how to run your Docker container
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: threat-detection-app
+spec:
+  replicas: 2 # Runs two copies of your app simultaneously for High Availability
+  selector:
+    matchLabels:
+      app: threat-detection
+  template:
+    metadata:
+      labels:
+        app: threat-detection
+    spec:
+      containers:
+      - name: threat-detection
+        # Points directly to the ECR registry we built earlier
+        image: 084000526807.dkr.ecr.eu-west-1.amazonaws.com/threat-detection-app:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7777
+
+---
+# 2. The Service: Commands AWS to build a Load Balancer so the public can reach the app
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: threat-detection-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb" # Provisions a blazing-fast AWS Network Load Balancer
+spec:
+  selector:
+    app: threat-detection
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 7777
+  type: LoadBalancer

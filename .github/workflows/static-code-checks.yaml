@@ -1,0 +1,87 @@
+name: ⛑️ Pre-Deployment Security Gates
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ============================
+  # CODE QUALITY (Ruff + Bandit) + FLake8
+  # ============================
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v6
+
+      - name: 🐍 Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install tools
+        run: |
+          pip install ruff bandit
+          python3 -m pip install flake8
+
+
+      - name: Run Ruff Code Lint
+        run: |
+          ruff check ./app
+
+      - name: Run Flake8 Code Lint
+        run: |
+          flake8 ./app
+
+      - name: Run Bandit Security Scanner
+        run: |
+          bandit -r ./app -lll
+
+  # ============================
+  # INFRA STRUCTURE CHECK (TFLint)
+  # ============================
+  infra-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v6
+
+      - name: 🔐 Setup Terraform 3.20+ (to support TFLint)
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: 🛠️ Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.48.0
+
+      - name: 🔍 Run TFLint on HCL files
+        run: |
+          tflint --recursive
+
+ # ============================
+  # Trivy-scan
+  # ============================
+  trivy-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v6
+
+      - name: 🛠️ Install Trivy
+        run: |
+          sudo apt-get install -y wget apt-transport-https gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: 🔍 Run Trivy
+        run: |
+          trivy fs --exit-code 1 --severity HIGH,CRITICAL .

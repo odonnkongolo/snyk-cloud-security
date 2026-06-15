@@ -1,0 +1,55 @@
+name: 🚀 Production Deployment Pipeline
+
+on:
+  workflow_run:
+    workflows: ["⛑️ Pre-Deployment Security Gates"]
+    types:
+      - completed
+
+env:
+  AWS_REGION: "eu-west-1"
+  EKS_CLUSTER_NAME: "threat-detection-cluster"
+  ECR_REPOSITORY: "threat-detection-app"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    # Condition: 
+    # 1. The pre-deploy workflow must have succeeded
+    # 2. The event that kicked off the pre-deploy must be a 'push' (not a pull_request)
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.triggering_actor != 'dependabot[bot]' &&
+      github.event.workflow_run.event == 'push'
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push Docker Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd app
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY --all-tags
+
+      - name: Update KubeConfig
+        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f kubernetes/prod-flask-app`.yaml
+          kubectl rollout restart deployment/threat-detection-app
